@@ -1,0 +1,169 @@
+---
+/**
+ * WaveformBar.astro
+ * -----------------
+ *
+ * The singleton mount component for `@arraypress/waveform-bar`.
+ *
+ * Renders **one** persistent host `<div>` (with `transition:persist`
+ * so it survives Astro view transitions) and an inline init script
+ * that calls `window.WaveformBar.init(config)` on every
+ * `astro:page-load`. The bar library itself injects the visible UI
+ * (`.waveform-bar`, `.wb-queue-panel`) into `<body>` at runtime — we
+ * provide a stable host element so view transitions don't tear it
+ * down on every navigation.
+ *
+ * ## Render this exactly ONCE
+ *
+ * Put it in your root layout, after your main content:
+ *
+ * ```astro
+ * ---
+ * // src/layouts/Layout.astro
+ * import '@arraypress/waveform-player/dist/waveform-player.css';
+ * import '@arraypress/waveform-bar/dist/waveform-bar.css';
+ * import wfpJsUrl from '@arraypress/waveform-player/dist/waveform-player.min.js?url';
+ * import wbJsUrl  from '@arraypress/waveform-bar/dist/waveform-bar.min.js?url';
+ * import { WaveformBar } from '@arraypress/waveform-bar-astro';
+ * ---
+ * <html>
+ *   <head>
+ *     <script src={wfpJsUrl} is:inline></script>
+ *     <script src={wbJsUrl}  is:inline></script>
+ *   </head>
+ *   <body>
+ *     <slot />
+ *     <WaveformBar config={{ persist: true, continuous: true }} />
+ *   </body>
+ * </html>
+ * ```
+ *
+ * ## Why a singleton?
+ *
+ * The core library installs a global on `window.WaveformBar`. There
+ * can only be one bar per page — calling `init()` twice destroys the
+ * first instance. Rendering this component more than once in the
+ * same page tree will result in repeated init calls, the last one
+ * wins. Don't do that.
+ *
+ * ## What this component does NOT do
+ *
+ * It does not load the library's JS or CSS — you control that in
+ * your layout's `<head>`. The bar library also has a strict
+ * dependency on `@arraypress/waveform-player`; both scripts must be
+ * present before this component's init script runs.
+ *
+ * It also does not provide any theme-specific styling (CSS variable
+ * bridges to your design tokens, close-button affordances, etc.).
+ * Those belong in your application layer because they're rarely
+ * portable — write them next to where you mount this component.
+ *
+ * @example Bare-bones
+ *   <WaveformBar />
+ *
+ * @example With config + custom host id
+ *   <WaveformBar
+ *     hostId="my-audio-bar-host"
+ *     config={{
+ *       persist: true,
+ *       autoResume: true,
+ *       continuous: true,
+ *       showQueue: true,
+ *       maxMeta: 1,
+ *       storageKey: 'my-app-bar',
+ *       actions: {
+ *         favorite: { endpoint: '/api/favorites' },
+ *         cart:     { endpoint: '/api/cart' },
+ *       },
+ *     }}
+ *   />
+ */
+
+import type { WaveformBarProps } from './types';
+
+const {
+	config = {},
+	persist = true,
+	hostId = 'waveform-bar-host',
+	class: className,
+} = Astro.props as WaveformBarProps;
+
+/**
+ * Serialise the config into the inline script. Astro's `define:vars`
+ * handles this safely (escapes `</script>`, encodes Unicode, etc.) so
+ * we don't have to JSON.stringify by hand. Anything that can't round
+ * through `JSON.parse(JSON.stringify(...))` (functions, Dates,
+ * regexps) is dropped — see the types file for which fields are
+ * function-bearing and therefore unavailable from Astro.
+ */
+const wbConfig = config;
+---
+
+<div
+	id={hostId}
+	class:list={['wb-host', className]}
+	transition:persist={persist ? 'waveform-bar' : undefined}
+></div>
+
+<script is:inline define:vars={{ WB_CFG: wbConfig, WB_HOST_ID: hostId }}>
+	/**
+	 * Inline init runtime for `<WaveformBar>`.
+	 *
+	 * Runs on first page load and on every Astro `astro:page-load`
+	 * event so cross-page navigation keeps the bar alive without
+	 * needing to re-render the host element (which `transition:persist`
+	 * already handles).
+	 *
+	 * The init call is guarded — if the bar library hasn't loaded yet
+	 * (consumer forgot the script tag), we log a one-time error
+	 * instead of throwing.
+	 *
+	 * After init we move the library's `.waveform-bar` element into
+	 * our `wb-host` div if it isn't already there. The bar library
+	 * appends to `<body>` by default; relocating it under the persist
+	 * host means view transitions keep it on screen.
+	 */
+	(function () {
+		if (window.__wbAstroInitBound) return;
+		window.__wbAstroInitBound = true;
+
+		var loggedMissing = false;
+
+		function initBar() {
+			if (!window.WaveformBar) {
+				if (!loggedMissing) {
+					console.error(
+						'[waveform-bar-astro] window.WaveformBar is undefined. ' +
+						'Did you forget to load @arraypress/waveform-bar and its ' +
+						'@arraypress/waveform-player peer dependency?'
+					);
+					loggedMissing = true;
+				}
+				return;
+			}
+
+			try {
+				window.WaveformBar.init(WB_CFG);
+			} catch (err) {
+				console.error('[waveform-bar-astro] init failed:', err);
+				return;
+			}
+
+			/* Relocate the bar element into our persist host so
+			 * view transitions keep it onscreen between navigations.
+			 * The library renders into <body> by default. */
+			var host = document.getElementById(WB_HOST_ID);
+			var bar = document.querySelector('.waveform-bar');
+			if (host && bar && bar.parentElement !== host) {
+				host.appendChild(bar);
+			}
+		}
+
+		document.addEventListener('astro:page-load', initBar);
+		if (document.readyState !== 'loading') {
+			initBar();
+		} else {
+			document.addEventListener('DOMContentLoaded', initBar);
+		}
+	})();
+</script>

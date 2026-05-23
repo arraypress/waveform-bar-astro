@@ -1,0 +1,247 @@
+---
+/**
+ * WaveformBarTrigger.astro
+ * ------------------------
+ *
+ * Polymorphic click trigger that wires an element up to the
+ * persistent `<WaveformBar>`. Emits the `data-wb-*` attribute
+ * contract the core library scans for at runtime; the library
+ * handles its own click delegation, so we just have to put the
+ * attributes on the element and the rest is plumbed automatically.
+ *
+ * ## What it renders
+ *
+ * Defaults to a `<button>` because that's the most accessible — it
+ * gives keyboard focus, Space/Enter activation, and an implicit
+ * `role="button"` for free.
+ *
+ * Override via `as`:
+ *
+ * ```astro
+ * <WaveformBarTrigger as="div" url={...}>
+ *   <article class="product-card">…</article>
+ * </WaveformBarTrigger>
+ * ```
+ *
+ * If you wrap a clickable child (link, button), the library still
+ * delegates from the inner click bubbling up to the outermost
+ * `[data-wb-play]` ancestor, but accessibility suffers — you'll need
+ * to handle keyboard activation and ARIA yourself.
+ *
+ * ## The default slot
+ *
+ * Without children, the component injects a pair of SVGs the core
+ * library knows how to toggle:
+ *
+ * ```html
+ * <svg class="wb-show-play"  …>play icon</svg>
+ * <svg class="wb-show-pause" …>pause icon</svg>
+ * ```
+ *
+ * The library shows / hides them based on whether THIS track is
+ * currently playing. To pass your own content, just put children
+ * inside the trigger — the defaults are skipped automatically.
+ *
+ * If you want the trigger to wrap arbitrary content but **also** keep
+ * the play/pause SVG icons (e.g. as an overlay on a product card),
+ * pass them yourself as children. Set `noDefaultIcons` to suppress
+ * the defaults explicitly if you're doing programmatic slot detection
+ * (`Astro.slots.has`) and need to know the default suppressed.
+ *
+ * ## Attribute reference
+ *
+ * | Prop          | Becomes …                |
+ * | ------------- | ------------------------ |
+ * | `mode='play'` | `data-wb-play`           |
+ * | `mode='queue'`| `data-wb-queue`          |
+ * | `url`         | `data-wb-url`            |
+ * | `id`          | `data-wb-id`             |
+ * | `title`       | `data-wb-title`          |
+ * | `artist`      | `data-wb-artist`         |
+ * | `album`       | `data-wb-album`          |
+ * | `artwork`     | `data-wb-artwork`        |
+ * | `link`        | `data-wb-link`           |
+ * | `duration`    | `data-wb-duration`       |
+ * | `bpm`         | `data-wb-bpm`            |
+ * | `key`         | `data-wb-key`            |
+ * | `meta`        | `data-wb-meta` (JSON)    |
+ * | `waveform`    | `data-wb-waveform`       |
+ * | `markers`     | `data-wb-markers` (JSON) |
+ * | `favorited`   | `data-wb-favorited`      |
+ * | `inCart`      | `data-wb-in-cart`        |
+ *
+ * @example Card with play button
+ *   <article class="product-card">
+ *     <img src={cover} alt="" />
+ *     <h3>{title}</h3>
+ *     <WaveformBarTrigger
+ *       url={previewUrl}
+ *       id={productId}
+ *       title={title}
+ *       artist={artist}
+ *       artwork={cover}
+ *       class="card-play-btn"
+ *     />
+ *   </article>
+ *
+ * @example Add-to-queue button with custom icon
+ *   <WaveformBarTrigger mode="queue" url={track.url} title={track.title}>
+ *     + Queue
+ *   </WaveformBarTrigger>
+ *
+ * @example DJ-mode markers
+ *   <WaveformBarTrigger
+ *     url="/audio/guest-mix.mp3"
+ *     title="Friday Night Mix"
+ *     artist="DJ One"
+ *     markers={[
+ *       { time: 0,   label: 'Intro', title: 'Opening Track' },
+ *       { time: 180, label: 'Drop',  title: 'Big Tune', bpm: 174 },
+ *       { time: 360, label: 'Outro', title: 'Cooldown' },
+ *     ]}
+ *   >
+ *     Play mix
+ *   </WaveformBarTrigger>
+ */
+
+import type { WaveformBarTriggerProps } from './types';
+
+const {
+	mode = 'play',
+	as: Tag = 'button',
+	url,
+	id,
+	title,
+	artist,
+	album,
+	artwork,
+	link,
+	duration,
+	bpm,
+	key,
+	meta,
+	waveform,
+	markers,
+	favorited,
+	inCart,
+	href,
+	ariaLabel,
+	class: className,
+	noDefaultIcons = false,
+} = Astro.props as WaveformBarTriggerProps;
+
+/**
+ * Build the `data-wb-*` map by hand so an omitted prop never emits
+ * an empty attribute (which the library would treat as "set but
+ * blank"). Same idiom as `<WaveformPlayer>` in the player package.
+ *
+ * @type {Record<string, string>}
+ */
+const data: Record<string, string> = {};
+
+/** Set a string attr only when the value is non-null/undefined. */
+const setStr = (k: string, v: string | undefined | null): void => {
+	if (v === undefined || v === null) return;
+	data[k] = v;
+};
+
+/**
+ * Set a numeric-or-string attr — coerces numbers via `String()`,
+ * passes strings through verbatim. Used for `duration`/`bpm` which
+ * accept either type at the library boundary.
+ */
+const setNumOrStr = (k: string, v: string | number | undefined | null): void => {
+	if (v === undefined || v === null) return;
+	data[k] = typeof v === 'number' ? String(v) : v;
+};
+
+/** Set a boolean attr as the string `'true'` / `'false'`. */
+const setBool = (k: string, v: boolean | undefined | null): void => {
+	if (v === undefined || v === null) return;
+	data[k] = v ? 'true' : 'false';
+};
+
+// ─── Pick the trigger flag ───────────────────────────────────────────────
+const triggerAttr = mode === 'queue' ? 'data-wb-queue' : 'data-wb-play';
+
+// ─── Track identity / metadata ───────────────────────────────────────────
+setStr('data-wb-url', url);
+setStr('data-wb-id', id ?? url);
+setStr('data-wb-title', title ?? null);
+setStr('data-wb-artist', artist ?? null);
+setStr('data-wb-album', album ?? null);
+setStr('data-wb-artwork', artwork ?? null);
+setStr('data-wb-link', link ?? null);
+
+// ─── Display chips ───────────────────────────────────────────────────────
+setNumOrStr('data-wb-duration', duration);
+setNumOrStr('data-wb-bpm', bpm);
+setStr('data-wb-key', key ?? null);
+if (Array.isArray(meta) && meta.length > 0) {
+	data['data-wb-meta'] = JSON.stringify(meta);
+}
+
+// ─── Audio data ──────────────────────────────────────────────────────────
+if (Array.isArray(waveform)) {
+	data['data-wb-waveform'] = JSON.stringify(waveform);
+} else if (typeof waveform === 'string') {
+	data['data-wb-waveform'] = waveform;
+}
+if (Array.isArray(markers) && markers.length > 0) {
+	data['data-wb-markers'] = JSON.stringify(markers);
+}
+
+// ─── Initial state ───────────────────────────────────────────────────────
+setBool('data-wb-favorited', favorited);
+setBool('data-wb-in-cart', inCart);
+
+/**
+ * `type="button"` is only meaningful when we're actually rendering a
+ * `<button>` — prevents it accidentally submitting an ancestor form
+ * the consumer didn't realise was there. For other tags we omit it
+ * entirely (Astro drops `undefined` attributes from the output).
+ */
+const buttonType = Tag === 'button' ? 'button' : undefined;
+
+/**
+ * Auto-generate an accessible label when the consumer didn't supply
+ * one. "Play preview of $title" / "Add $title to queue" matches the
+ * pattern used across the reference theme; falls back to a bare
+ * "Play" / "Add to queue" if no title is set either.
+ */
+const resolvedAriaLabel =
+	ariaLabel ??
+	(mode === 'queue'
+		? title
+			? `Add ${title} to queue`
+			: 'Add to queue'
+		: title
+			? `Play ${title}`
+			: 'Play');
+
+/* Detect whether a child slot was passed. `Astro.slots.has('default')`
+ * is the public API for this. */
+const hasCustomChildren = Astro.slots.has('default');
+const renderDefaultIcons = !hasCustomChildren && !noDefaultIcons;
+---
+
+<Tag
+	type={buttonType}
+	href={Tag === 'a' ? href : undefined}
+	{...{ [triggerAttr]: '' }}
+	{...data}
+	class:list={['wb-icon-swap', className]}
+	aria-label={resolvedAriaLabel}
+>
+	{renderDefaultIcons && (
+		<>
+			<svg class="wb-show-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+				<path d="M8 5v14l11-7z" />
+			</svg>
+			<svg class="wb-show-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="display:none;">
+				<path d="M6 5h4v14H6zM14 5h4v14h-4z" />
+			</svg>
+		</>
+	)}
+	<slot />
+</Tag>

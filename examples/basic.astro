@@ -1,0 +1,139 @@
+---
+/**
+ * examples/basic.astro
+ * --------------------
+ *
+ * Reference page showing every <WaveformBar> + <WaveformBarTrigger>
+ * usage pattern this package supports. Copy/paste into your own
+ * Astro project's `src/pages/` directory to play with the components.
+ *
+ * Run order is critical: the bar singleton expects both core
+ * libraries (waveform-player AND waveform-bar) to be loaded before
+ * the init script runs.
+ */
+import { WaveformBar, WaveformBarTrigger } from '@arraypress/waveform-bar-astro';
+import '@arraypress/waveform-player/dist/waveform-player.css';
+import '@arraypress/waveform-bar/dist/waveform-bar.css';
+import wfpJsUrl from '@arraypress/waveform-player/dist/waveform-player.min.js?url';
+import wbJsUrl  from '@arraypress/waveform-bar/dist/waveform-bar.min.js?url';
+---
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>WaveformBar Astro — examples</title>
+		<!-- Load the core libraries once. Order matters: waveform-bar
+		     has a strict dependency on waveform-player at runtime. -->
+		<script src={wfpJsUrl} is:inline></script>
+		<script src={wbJsUrl}  is:inline></script>
+	</head>
+
+	<body style="max-width: 720px; margin: 2rem auto; padding-bottom: 8rem; font-family: system-ui;">
+		<h1>WaveformBar Astro examples</h1>
+
+		<section>
+			<h2>1. Single play trigger (defaults)</h2>
+			<p>Click to play in the persistent bar at the bottom of the page.</p>
+			<WaveformBarTrigger
+				url="/audio/track.mp3"
+				title="My Track"
+				artist="Artist Name"
+			/>
+		</section>
+
+		<section>
+			<h2>2. Product card pattern</h2>
+			<p>Wrap a card with a button trigger that overlays a play icon.</p>
+			<article style="display: flex; gap: 1rem; align-items: center;">
+				<img src="/img/cover.jpg" alt="" width="64" height="64" />
+				<div>
+					<h3 style="margin: 0;">Trap Beat</h3>
+					<p style="margin: 0; color: #888;">140 BPM · Cm</p>
+				</div>
+				<WaveformBarTrigger
+					url="/audio/beat.mp3"
+					id="product-42"
+					title="Trap Beat"
+					artist="Producer"
+					artwork="/img/cover.jpg"
+					bpm={140}
+					key="Cm"
+					duration="3:45"
+					link="/products/trap-beat"
+				/>
+			</article>
+		</section>
+
+		<section>
+			<h2>3. Add-to-queue button (custom content)</h2>
+			<p>Different icon, different mode.</p>
+			<WaveformBarTrigger
+				mode="queue"
+				url="/audio/another.mp3"
+				title="Another Track"
+				artist="Producer"
+			>
+				+ Queue
+			</WaveformBarTrigger>
+		</section>
+
+		<section>
+			<h2>4. Pre-computed waveform peaks</h2>
+			<p>Saves a Web Audio decode on click.</p>
+			<WaveformBarTrigger
+				url="/audio/track.mp3"
+				title="Pre-decoded"
+				waveform="/peaks/track.json"
+			/>
+		</section>
+
+		<section>
+			<h2>5. DJ-mode markers (multi-chapter mix)</h2>
+			<p>Title / artist update as playback crosses each marker boundary.</p>
+			<WaveformBarTrigger
+				url="/audio/guest-mix.mp3"
+				title="Friday Night Mix"
+				artist="DJ One"
+				markers={[
+					{ time: 0,   label: 'Intro', title: 'Opening Track' },
+					{ time: 180, label: 'Drop',  title: 'Big Tune', artist: 'Producer X', bpm: 174 },
+					{ time: 360, label: 'Outro', title: 'Cooldown' },
+				]}
+			>
+				Play mix
+			</WaveformBarTrigger>
+		</section>
+
+		<section>
+			<h2>6. Card-as-trigger (whole article clickable)</h2>
+			<WaveformBarTrigger
+				as="div"
+				url="/audio/card.mp3"
+				title="Whole-card play"
+				artist="Producer"
+				noDefaultIcons
+				class="card-as-trigger"
+				style="display: block; padding: 1rem; border: 1px solid #ddd; border-radius: 8px; cursor: pointer;"
+			>
+				<h3 style="margin: 0;">Click anywhere on this card</h3>
+				<p style="margin: 0.5rem 0 0; color: #888;">No play icon needed.</p>
+			</WaveformBarTrigger>
+		</section>
+
+		<!-- Singleton bar mount — render exactly ONCE per page. -->
+		<WaveformBar
+			config={{
+				persist: true,
+				autoResume: true,
+				continuous: true,
+				showQueue: true,
+				maxMeta: 1,
+				storageKey: 'examples-bar',
+				actions: {
+					favorite: { endpoint: '/api/favorites' },
+					cart:     { endpoint: '/api/cart' },
+				},
+			}}
+		/>
+	</body>
+</html>
