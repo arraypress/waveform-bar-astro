@@ -5,7 +5,22 @@ All notable changes to `@arraypress/waveform-bar-astro` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.0] — Unreleased
+## [0.1.1] — Unreleased
+
+### Fixed
+
+- `<WaveformBarTrigger>`'s default pause-icon SVG no longer carries an
+  inline `style="display:none;"`. The previous value beat the core
+  library's class-based toggle
+  (`.wb-icon-swap.wb-playing .wb-show-pause { display: inline; }`),
+  leaving the pause icon permanently hidden once a track started
+  playing. The library's own CSS already covers the initial-hidden
+  state via `.wb-icon-swap .wb-show-pause { display: none; }`, so the
+  inline style is redundant as well as harmful.
+- Added two regression tests pinning the no-inline-display contract
+  so the bug can't return.
+
+## [0.1.0]
 
 Initial release.
 

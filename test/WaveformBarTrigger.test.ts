@@ -284,6 +284,29 @@ describe('<WaveformBarTrigger> — slot + default icons', () => {
 		expect(html).not.toMatch(/wb-show-play/);
 		expect(html).not.toMatch(/wb-show-pause/);
 	});
+
+	/* Regression test: an earlier version emitted
+	 *   <svg class="wb-show-pause" style="display:none;">
+	 * which permanently overrode the library's class-based toggle
+	 * (`.wb-icon-swap.wb-playing .wb-show-pause { display: inline; }`)
+	 * — inline styles win over class rules without `!important`. The
+	 * library's CSS already handles the initial-hidden state via
+	 * `.wb-icon-swap .wb-show-pause { display: none; }`, so the SVG
+	 * MUST NOT carry an inline display rule of its own.
+	 */
+	it('default pause SVG carries no inline display style (library toggles via class)', async () => {
+		const html = await render({ url: '/a.mp3' });
+		const pauseMatch = /<svg[^>]*class="wb-show-pause"[^>]*>/.exec(html);
+		expect(pauseMatch, 'expected a wb-show-pause svg in the default slot').not.toBeNull();
+		expect(pauseMatch![0]).not.toMatch(/style=/);
+	});
+
+	it('default play SVG also carries no inline display style', async () => {
+		const html = await render({ url: '/a.mp3' });
+		const playMatch = /<svg[^>]*class="wb-show-play"[^>]*>/.exec(html);
+		expect(playMatch, 'expected a wb-show-play svg in the default slot').not.toBeNull();
+		expect(playMatch![0]).not.toMatch(/style=/);
+	});
 });
 
 // ─── Aria label generation ───────────────────────────────────────────────

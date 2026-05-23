@@ -1,6 +1,6 @@
 {
   "name": "@arraypress/waveform-bar-astro",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Astro components for @arraypress/waveform-bar — typed singleton mount and polymorphic play/queue trigger.",
   "type": "module",
   "files": [
