@@ -7,11 +7,14 @@
  *
  * Renders **one** persistent host `<div>` (with `transition:persist`
  * so it survives Astro view transitions) and an inline init script
- * that calls `window.WaveformBar.init(config)` on every
- * `astro:page-load`. The bar library itself injects the visible UI
- * (`.waveform-bar`, `.wb-queue-panel`) into `<body>` at runtime — we
- * provide a stable host element so view transitions don't tear it
- * down on every navigation.
+ * that calls `window.WaveformBar.init(config)` exactly **once** per
+ * page session. The init is idempotent: subsequent `astro:page-load`
+ * events are a no-op, because waveform-bar's `init()` destroys and
+ * rebuilds the bar on every call (restarting/re-buffering the playing
+ * audio) — which would defeat `transition:persist`. The bar library
+ * itself injects the visible UI (`.waveform-bar`, `.wb-queue-panel`)
+ * into `<body>` at runtime — we provide a stable host element so view
+ * transitions don't tear it down on every navigation.
  *
  * ## Render this exactly ONCE
  *
@@ -109,14 +112,24 @@ const wbConfig = config;
 	/**
 	 * Inline init runtime for `<WaveformBar>`.
 	 *
-	 * Runs on first page load and on every Astro `astro:page-load`
-	 * event so cross-page navigation keeps the bar alive without
-	 * needing to re-render the host element (which `transition:persist`
-	 * already handles).
+	 * Initialises the bar **exactly once** per page session. We listen
+	 * for `astro:page-load` (and `DOMContentLoaded` on first paint) so
+	 * the bar comes up as soon as the library is available, but the
+	 * actual `init(config)` call is idempotent — it fires a single time
+	 * and every later navigation is a no-op.
+	 *
+	 * This matters because waveform-bar's `init()` calls `destroy()`
+	 * first (see core init: `if (this.isInitialized) this.destroy()`),
+	 * so re-initialising on each `astro:page-load` would tear down and
+	 * rebuild the bar — restarting/re-buffering the currently-playing
+	 * audio and defeating `transition:persist`. The persisted host (and
+	 * the bar relocated into it) already survives navigations, so on
+	 * subsequent page loads we leave it untouched.
 	 *
 	 * The init call is guarded — if the bar library hasn't loaded yet
-	 * (consumer forgot the script tag), we log a one-time error
-	 * instead of throwing.
+	 * (consumer forgot the script tag), we log a one-time error and do
+	 * NOT mark init as done, so a later `astro:page-load` can retry once
+	 * the script is present.
 	 *
 	 * After init we move the library's `.waveform-bar` element into
 	 * our `wb-host` div if it isn't already there. The bar library
@@ -130,6 +143,12 @@ const wbConfig = config;
 		var loggedMissing = false;
 
 		function initBar() {
+			/* Idempotent: only ever init the bar once. waveform-bar's
+			 * init() destroys + rebuilds, so re-running it on every
+			 * navigation would restart the playing audio and undo
+			 * transition:persist. Once initialised we no-op. */
+			if (window.__apWaveformBarInited) return;
+
 			if (!window.WaveformBar) {
 				if (!loggedMissing) {
 					console.error(
@@ -149,6 +168,11 @@ const wbConfig = config;
 				return;
 			}
 
+			/* Mark init as done only after a successful init() so that a
+			 * failed/early attempt (e.g. library not yet loaded) can be
+			 * retried on the next astro:page-load. */
+			window.__apWaveformBarInited = true;
+
 			/* Relocate the bar element into our persist host so
 			 * view transitions keep it onscreen between navigations.
 			 * The library renders into <body> by default. */
@@ -157,6 +181,14 @@ const wbConfig = config;
 			if (host && bar && bar.parentElement !== host) {
 				host.appendChild(bar);
 			}
+
+			/* NOTE: waveform-bar also appends its `.wb-queue-panel` to
+			 * <body>, separately from `.waveform-bar`. We don't relocate
+			 * it into the persist host because doing so reliably needs a
+			 * core waveform-bar `container` option that doesn't exist
+			 * yet. Pending that option the queue panel stays on <body>;
+			 * it is recreated on a fresh init, so the once-only init
+			 * above keeps it stable across navigations regardless. */
 		}
 
 		document.addEventListener('astro:page-load', initBar);

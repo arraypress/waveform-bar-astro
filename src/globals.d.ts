@@ -126,6 +126,17 @@ declare global {
 		 * @internal
 		 */
 		__wbAstroInitBound?: boolean;
+
+		/**
+		 * Internal — set by `<WaveformBar>`'s inline script once the bar
+		 * has been initialised, making `init(config)` idempotent across
+		 * `astro:page-load` events (waveform-bar's `init()` destroys +
+		 * rebuilds, which would restart the playing audio). Do not rely
+		 * on this; it is an implementation detail.
+		 *
+		 * @internal
+		 */
+		__apWaveformBarInited?: boolean;
 	}
 }
 
