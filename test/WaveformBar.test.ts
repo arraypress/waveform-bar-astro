@@ -99,6 +99,30 @@ describe('<WaveformBar> — init script', () => {
 		expect(html).toContain('"storageKey":"my-key"');
 	});
 
+	it('flows the 1.4.0 config additions through to WB_CFG', async () => {
+		const html = await render({
+			config: {
+				position: 'top',
+				wide: true,
+				maxWidth: '1200px',
+				collapsible: true,
+				waveform: false,
+				share: true,
+				shareParam: 'ts',
+				errorText: 'Could not load audio',
+			},
+		});
+
+		expect(html).toContain('"position":"top"');
+		expect(html).toContain('"wide":true');
+		expect(html).toContain('"maxWidth":"1200px"');
+		expect(html).toContain('"collapsible":true');
+		expect(html).toContain('"waveform":false');
+		expect(html).toContain('"share":true');
+		expect(html).toContain('"shareParam":"ts"');
+		expect(html).toContain('"errorText":"Could not load audio"');
+	});
+
 	it('passes the hostId through as WB_HOST_ID', async () => {
 		const html = await render({ hostId: 'my-app-bar' });
 		expect(html).toMatch(/WB_HOST_ID\s*=\s*"my-app-bar"/);

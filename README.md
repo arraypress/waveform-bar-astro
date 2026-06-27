@@ -196,6 +196,7 @@ Every field optional — the library has sensible defaults.
 |---|---|---|---|
 | `theme` | `'dark' \| 'light' \| null` | `null` | `null` auto-detects from page. |
 | `defaultArtwork` | `string` | — | Fallback cover when a track has no artwork. |
+| `waveform` | `boolean` | `true` | `false` swaps the waveform for a classic Spotify-style seek bar. |
 | `waveformStyle` | `'bars' \| 'mirror' \| 'line' \| 'blocks' \| 'dots' \| 'seekbar'` | `'mirror'` | |
 | `waveformHeight` | `number` | `32` | Canvas height in pixels. |
 | `barWidth` | `number` | `2` | Bar / block width. |
@@ -210,6 +211,28 @@ Every field optional — the library has sensible defaults.
 |---|---|---|---|
 | `volume` | `number` | — | Initial volume (0..1). |
 | `storageKey` | `string` | `'waveform-bar'` | Prefix for storage keys. |
+
+### Layout & docking
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `position` | `'bottom' \| 'top'` | `'bottom'` | Which edge the bar docks to. |
+| `wide` | `boolean` | `false` | Span full viewport width (lifts the 1400px cap). |
+| `maxWidth` | `string \| null` | `null` | Custom content max-width (e.g. `'1200px'`); overrides `wide`. |
+| `collapsible` | `boolean` | `false` | Show a collapse button that shrinks the bar to a floating transport pill. |
+
+### Sharing
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `share` | `boolean` | `false` | Show a "copy share link" button (emits `?<shareParam>=<seconds>`). |
+| `shareParam` | `string` | `'wt'` | URL query param for the shared timestamp (seconds). |
+
+### Error handling
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `errorText` | `string \| null` | `null` | Custom "audio failed to load" message (`null` = player default). |
 
 ### Actions (favorite / cart endpoints)
 
@@ -319,7 +342,7 @@ npm run test:watch
 npm run typecheck
 ```
 
-46 Vitest tests via Astro's `experimental_AstroContainer` API — no browser required.
+49 Vitest tests via Astro's `experimental_AstroContainer` API — no browser required.
 
 ## License
 

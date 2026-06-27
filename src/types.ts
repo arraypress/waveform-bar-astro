@@ -208,6 +208,9 @@ export interface WaveformBarConfig {
 
 	// ── Waveform visualisation ─────────────────────────────────────────
 
+	/** `false` swaps the waveform for a classic Spotify-style seek bar. @default true */
+	waveform?: boolean;
+
 	/** Visual style of the waveform in the bar. @default 'mirror' */
 	waveformStyle?: WaveformStyle;
 
@@ -244,6 +247,67 @@ export interface WaveformBarConfig {
 	 * @default 'waveform-bar'
 	 */
 	storageKey?: string;
+
+	// ── Layout & docking ───────────────────────────────────────────────
+
+	/**
+	 * Which edge of the viewport the bar docks to.
+	 *
+	 * @default 'bottom'
+	 */
+	position?: 'bottom' | 'top';
+
+	/**
+	 * Let the bar's content span the full viewport width, lifting the
+	 * built-in 1400px max-width cap.
+	 *
+	 * @default false
+	 */
+	wide?: boolean;
+
+	/**
+	 * Custom content max-width as a CSS value (e.g. `'1200px'`).
+	 * Overrides {@link wide} when set.
+	 *
+	 * @default null
+	 */
+	maxWidth?: string | null;
+
+	/**
+	 * Show a collapse button that shrinks the bar down to a floating
+	 * transport pill.
+	 *
+	 * @default false
+	 */
+	collapsible?: boolean;
+
+	// ── Sharing ────────────────────────────────────────────────────────
+
+	/**
+	 * Show a "copy share link" button. The copied URL carries the
+	 * current playback position as a `?<shareParam>=<seconds>` query
+	 * param.
+	 *
+	 * @default false
+	 */
+	share?: boolean;
+
+	/**
+	 * URL query param used for the shared timestamp (in seconds).
+	 *
+	 * @default 'wt'
+	 */
+	shareParam?: string;
+
+	// ── Error handling ─────────────────────────────────────────────────
+
+	/**
+	 * Custom "audio failed to load" message shown in the bar. `null`
+	 * keeps the underlying player's default message.
+	 *
+	 * @default null
+	 */
+	errorText?: string | null;
 
 	// ── Server-side action endpoints ───────────────────────────────────
 
