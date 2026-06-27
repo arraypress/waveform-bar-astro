@@ -102,11 +102,26 @@ const {
 const wbConfig = config;
 ---
 
-<div
-	id={hostId}
-	class:list={['wb-host', className]}
-	transition:persist={persist ? 'waveform-bar' : undefined}
-></div>
+{/*
+  The `transition:persist` directive is applied at the markup level via
+  two branches rather than with a conditional expression on the attribute.
+  Astro's container renderer emits a dynamic value
+  (`transition:persist={cond ? 'name' : undefined}` — or even a plain
+  variable) as the *literal source text* instead of evaluating it, which
+  breaks the host element. Splitting into a persisted branch (string
+  literal name) and a non-persisted branch (attribute omitted) keeps the
+  real output correct: the host carries `transition:persist="waveform-bar"`
+  when enabled and drops it entirely when disabled.
+*/}
+{persist ? (
+	<div
+		id={hostId}
+		class:list={['wb-host', className]}
+		transition:persist="waveform-bar"
+	></div>
+) : (
+	<div id={hostId} class:list={['wb-host', className]}></div>
+)}
 
 <script is:inline define:vars={{ WB_CFG: wbConfig, WB_HOST_ID: hostId }}>
 	/**

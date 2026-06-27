@@ -136,7 +136,10 @@ describe('<WaveformBar> — init script', () => {
 describe('<WaveformBar> — persist prop', () => {
 	it('adds the transition:persist attribute by default', async () => {
 		const html = await render();
-		expect(html).toMatch(/data-astro-transition-persist|transition:persist/);
+		/* Astro's container renderer compiles `transition:persist` to the
+		 * `data-astro-transition-persist` attribute, carrying the persisted
+		 * element name so the host survives view transitions. */
+		expect(html).toMatch(/data-astro-transition-persist="waveform-bar"/);
 	});
 
 	it('omits the persist attribute when persist=false', async () => {
