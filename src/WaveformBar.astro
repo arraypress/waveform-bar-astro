@@ -127,7 +127,7 @@ const wbConfig = config;
 	 * subsequent page loads we leave it untouched.
 	 *
 	 * The init call is guarded — if the bar library hasn't loaded yet
-	 * (consumer forgot the script tag), we log a one-time error and do
+	 * (consumer forgot the script tag), we log a one-time warning and do
 	 * NOT mark init as done, so a later `astro:page-load` can retry once
 	 * the script is present.
 	 *
@@ -151,10 +151,11 @@ const wbConfig = config;
 
 			if (!window.WaveformBar) {
 				if (!loggedMissing) {
-					console.error(
-						'[waveform-bar-astro] window.WaveformBar is undefined. ' +
+					console.warn(
+						'[WaveformBarAstro] window.WaveformBar is not loaded yet. ' +
 						'Did you forget to load @arraypress/waveform-bar and its ' +
-						'@arraypress/waveform-player peer dependency?'
+						'@arraypress/waveform-player peer dependency? Will retry on ' +
+						'the next astro:page-load.'
 					);
 					loggedMissing = true;
 				}
@@ -164,7 +165,7 @@ const wbConfig = config;
 			try {
 				window.WaveformBar.init(WB_CFG);
 			} catch (err) {
-				console.error('[waveform-bar-astro] init failed:', err);
+				console.error('[WaveformBarAstro] WaveformBar.init() failed:', err);
 				return;
 			}
 
