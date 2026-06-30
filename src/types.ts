@@ -266,20 +266,36 @@ export interface WaveformBarConfig {
 	wide?: boolean;
 
 	/**
-	 * Custom content max-width as a CSS value (e.g. `'1200px'`).
-	 * Overrides {@link wide} when set.
-	 *
-	 * @default null
-	 */
-	maxWidth?: string | null;
-
-	/**
 	 * Show a collapse button that shrinks the bar down to a floating
 	 * transport pill.
 	 *
 	 * @default false
 	 */
 	collapsible?: boolean;
+
+	/**
+	 * Display mode. `'waveform'` (default) = default layout + waveform,
+	 * width-adjustable. `'classic'` = Spotify-style centre layout + seekbar,
+	 * always full-width.
+	 *
+	 * @default 'waveform'
+	 */
+	mode?: 'waveform' | 'classic';
+
+	/**
+	 * Show a shuffle toggle button in the transport cluster.
+	 *
+	 * @default false
+	 */
+	showShuffle?: boolean;
+
+	/**
+	 * Start with shuffle (random queue advance) on. Works with or without
+	 * the toggle button (`showShuffle`).
+	 *
+	 * @default false
+	 */
+	shuffle?: boolean;
 
 	// ── Sharing ────────────────────────────────────────────────────────
 

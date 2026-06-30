@@ -104,7 +104,7 @@ describe('<WaveformBar> — init script', () => {
 			config: {
 				position: 'top',
 				wide: true,
-				maxWidth: '1200px',
+				mode: 'classic',
 				collapsible: true,
 				waveform: false,
 				share: true,
@@ -115,7 +115,7 @@ describe('<WaveformBar> — init script', () => {
 
 		expect(html).toContain('"position":"top"');
 		expect(html).toContain('"wide":true');
-		expect(html).toContain('"maxWidth":"1200px"');
+		expect(html).toContain('"mode":"classic"');
 		expect(html).toContain('"collapsible":true');
 		expect(html).toContain('"waveform":false');
 		expect(html).toContain('"share":true');

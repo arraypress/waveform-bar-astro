@@ -216,10 +216,12 @@ Every field optional — the library has sensible defaults.
 
 | Prop | Type | Default | Description |
 |---|---|---|---|
+| `mode` | `'waveform' \| 'classic'` | `'waveform'` | `'classic'` = Spotify-style centre layout + seek bar. |
 | `position` | `'bottom' \| 'top'` | `'bottom'` | Which edge the bar docks to. |
-| `wide` | `boolean` | `false` | Span full viewport width (lifts the 1400px cap). |
-| `maxWidth` | `string \| null` | `null` | Custom content max-width (e.g. `'1200px'`); overrides `wide`. |
+| `wide` | `boolean` | `false` | Waveform mode only: span full viewport width (lifts the 1400px cap). |
 | `collapsible` | `boolean` | `false` | Show a collapse button that shrinks the bar to a floating transport pill. |
+| `showShuffle` | `boolean` | `false` | Show a shuffle toggle in the transport cluster. |
+| `shuffle` | `boolean` | `false` | Start with shuffle (random queue advance) on. |
 
 ### Sharing
 
